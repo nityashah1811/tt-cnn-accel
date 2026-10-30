@@ -8,7 +8,7 @@ parallel MACs, and 6x6x4 INT20 output read out one byte at a time.
 
 - How it works, pinout and how to drive it: [docs/info.md](docs/info.md)
 - Top module: `tt_um_nityashah1811_cnn_accel` ([src/project.v](src/project.v))
-- Size: 3x2 tiles, 50 MHz
+- Size: 3x2 tiles, 40 MHz
 
 ## Source
 

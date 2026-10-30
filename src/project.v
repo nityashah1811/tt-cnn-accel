@@ -49,12 +49,11 @@ module tt_um_nityashah1811_cnn_accel (
     end
   end
 
-  wire [3:0] rise = sync2 & ~sync3;
-  wire wr_pulse    = rise[0];
+  wire wr_pulse    = sync2[0] & ~sync3[0];
   wire sel         = sync2[1];
   wire sel_changed = sync2[1] ^ sync3[1];
-  wire start_pulse = rise[2];
-  wire rd_pulse    = rise[3];
+  wire start_pulse = sync2[2] & ~sync3[2];
+  wire rd_pulse    = sync2[3] & ~sync3[3];
 
   // --------------------------------------------------------- load pointer
   reg  [5:0] ld_ptr;

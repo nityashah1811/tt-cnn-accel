@@ -20,7 +20,7 @@ VERILOG_FILES:
   - dir::../src/cnn9_mac.v
 
 CLOCK_PORT: clk
-CLOCK_PERIOD: 20
+CLOCK_PERIOD: 25
 
 # Tiny Tapeout 3x2 tile (from tt-support-tools tech/sky130A/tile_sizes.yaml)
 FP_SIZING: absolute

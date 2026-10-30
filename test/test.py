@@ -89,7 +89,7 @@ class Host:
 
 
 async def setup(dut):
-    clock = Clock(dut.clk, 20, unit="ns")  # 50 MHz
+    clock = Clock(dut.clk, 25, unit="ns")  # 40 MHz
     cocotb.start_soon(clock.start())
     dut.ena.value = 1
     dut.ui_in.value = 0
