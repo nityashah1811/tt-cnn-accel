@@ -12,3 +12,5 @@ test/__pycache__/
 test/results.xml
 test/gate_level_netlist.v
 vm/runs
+vm/tb_vm
+vm/tb_vm_gl
