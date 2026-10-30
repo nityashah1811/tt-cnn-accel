@@ -1,0 +1,60 @@
+# OpenLane config for running this project on bASICs VM.
+#
+# Same settings Tiny Tapeout's flow uses (src/config.json plus what
+# tt_tool.py --create-user-config adds), so a pass here should mean a pass
+# in the GitHub GDS action:
+#   - die size = exactly one 3x2 Tiny Tapeout tile area
+#   - pin positions come from TT's DEF template (replaces pin_order.cfg)
+#   - no custom SDC: OpenLane builds the default one from CLOCK_PERIOD
+#
+# Run from this folder:
+#   openlane --manual-pdk --pdk sky130A --pdk-root "$PDK_ROOT" config.yaml
+#
+# To try 2x2 tiles: DIE_AREA [0, 0, 334.88, 225.76] and tt_block_2x2_pg.def
+
+DESIGN_NAME: tt_um_nityashah1811_cnn_accel
+
+VERILOG_FILES:
+  - dir::../src/project.v
+  - dir::../src/cnn9_core.v
+  - dir::../src/cnn9_mac.v
+
+CLOCK_PORT: clk
+CLOCK_PERIOD: 20
+
+# Tiny Tapeout 3x2 tile (from tt-support-tools tech/sky130A/tile_sizes.yaml)
+FP_SIZING: absolute
+DIE_AREA: [0, 0, 508.76, 225.76]
+FP_DEF_TEMPLATE: dir::tt_block_3x2_pg.def
+
+VDD_PIN: VPWR
+GND_PIN: VGND
+RT_MAX_LAYER: met4
+
+# --- copied from src/config.json (Tiny Tapeout defaults) ---
+PL_TARGET_DENSITY_PCT: 60
+PL_RESIZER_HOLD_SLACK_MARGIN: 0.1
+GRT_RESIZER_HOLD_SLACK_MARGIN: 0.05
+RUN_LINTER: true
+LINTER_INCLUDE_PDK_MODELS: true
+
+RUN_KLAYOUT_XOR: false
+RUN_KLAYOUT_DRC: false
+DESIGN_REPAIR_BUFFER_OUTPUT_PORTS: false
+
+TOP_MARGIN_MULT: 1
+BOTTOM_MARGIN_MULT: 1
+LEFT_MARGIN_MULT: 6
+RIGHT_MARGIN_MULT: 6
+
+GRT_ALLOW_CONGESTION: true
+FP_IO_HLENGTH: 2
+FP_IO_VLENGTH: 2
+FP_PDN_VPITCH: 38.87
+RUN_CTS: true
+FP_PDN_MULTILAYER: false
+MAGIC_DEF_LABELS: false
+MAGIC_WRITE_LEF_PINONLY: true
+
+pdk::sky130*:
+  STD_CELL_LIBRARY: sky130_fd_sc_hd
