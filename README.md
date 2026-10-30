@@ -2,47 +2,68 @@
 
 # CNN Conv Accelerator (Tiny Tapeout, sky130)
 
-A 3x3 convolution accelerator from CNNAccelTeam9, packaged for
-[Tiny Tapeout](https://tinytapeout.com): an 8x8 INT8 image, 4 filters, 4
-parallel MACs, and 6x6x4 INT20 output read out one byte at a time.
+A streaming 3x3 convolution accelerator from CNNAccelTeam9, packaged for
+[Tiny Tapeout](https://tinytapeout.com): one CNN layer on an 8x8 INT8
+image with 4 filters computed in parallel, 6x6x4 INT20 output.
 
 - How it works, pinout and how to drive it: [docs/info.md](docs/info.md)
 - Top module: `tt_um_nityashah1811_cnn_accel` ([src/project.v](src/project.v))
-- Size: 3x2 tiles, 40 MHz
-- Layout and signoff results: [gds/](gds/) (see [Results](#results))
+- **2x2 tiles, 40 MHz, 52% utilisation, timing met in every corner**
+- Final layout and signoff reports: [gds/](gds/)
 
 ![Layout](gds/layout.png)
 
+## Architecture
+
+```
+ weights (36 B) ──► 4 x 72-bit rotating weight loops ──► 1 bit/clk ─┐
+                                                                    ▼
+ pixels (64 B) ──► 19-pixel line buffer ──► 9 fixed window taps ──► 4 bit-serial MACs ──► 12 result bytes
+                                                                    (one per filter)
+```
+
+- **Line buffer.** The host streams pixels in. The chip keeps the newest
+  19 (two rows plus three); when a pixel completes a 3x3 window, the window
+  is at fixed buffer taps. No 64-way memory lookup.
+- **Rotating weights.** Each filter's 9 weights sit in a 72-bit loop that
+  rotates one bit per clock, the exact order the MACs consume them. No
+  weight lookup either.
+- **Bit-serial MACs.** Each MAC adds the pixel shifted by one weight bit per
+  clock (sign bit subtracts): an adder instead of an 8x8 multiplier. 81
+  clocks per output position (2 µs at 40 MHz), 4 filters at once.
+- **No output memory.** The 4 sums wait in the accumulators until the host
+  reads them.
+- Only flip-flops: no latches, no memories, no clock gating.
+
 ## Results
 
-From the Tiny Tapeout GDS action for commit `53a8bab`
-([run 40990714001](https://github.com/nityashah1811/tt-cnn-accel/actions/runs/40990714001)),
-LibreLane on sky130A, `sky130_fd_sc_hd` cells. Files in [gds/](gds/):
+From the Tiny Tapeout GDS action for commit `e1832bd`
+([run 40999044882](https://github.com/nityashah1811/tt-cnn-accel/actions/runs/40999044882)),
+LibreLane on sky130A with `sky130_fd_sc_hd` cells. Files in [gds/](gds/):
 `tt_um_nityashah1811_cnn_accel.gds` (final layout), `.lef`, `metrics.csv`,
-`synthesis-stats.txt`, `precheck_results.md`.
+`synthesis-stats.txt`, `precheck_results.md`, `layout.png`.
 
-**Size**
+**Size and power**
 
 | | |
 |---|---|
-| Tiles | 3x2 |
-| Die | 508.76 x 225.76 µm (114,858 µm²) |
-| Cells after synthesis | 5,122 (62,431 µm²), including 1,029 flip-flops |
-| Standard cells after place and route | 8,343 (80,878 µm², incl. buffers and taps) |
-| Utilisation | 72.9% |
-| Wire length | 192,962 µm |
-| Power (typical) | 18.0 mW |
+| Tiles | 2x2 |
+| Die | 334.88 x 225.76 µm (75,603 µm²) |
+| Cells after synthesis | 2,001 (26,159 µm²), including 585 flip-flops |
+| Standard cells after place and route | 4,028 (37,637 µm²) |
+| Utilisation | 51.9% |
+| Wire length | 64,395 µm |
+| Power (typical corner) | 2.6 mW |
 
 **Timing at 40 MHz (25 ns clock)**, worst over min/nom/max parasitics:
 
 | Corner | Setup slack | Hold slack |
 |---|---|---|
-| Typical (tt, 25 °C, 1.80 V) | +15.51 ns | +0.34 ns |
-| Slow (ss, 100 °C, 1.60 V) | +10.09 ns | +0.93 ns |
-| Fast (ff, −40 °C, 1.95 V) | +17.00 ns | +0.12 ns |
+| Typical (tt, 25 °C, 1.80 V) | +15.12 ns | +0.35 ns |
+| Slow (ss, 100 °C, 1.60 V) | +11.02 ns | +0.92 ns |
+| Fast (ff, −40 °C, 1.95 V) | +16.82 ns | +0.11 ns |
 
-0 setup and 0 hold violations. The slow-corner path is about 15 ns, so the
-design has room to run faster than 40 MHz.
+0 setup and 0 hold violations.
 
 **Signoff**
 
@@ -52,44 +73,45 @@ design has room to run faster than 40 MHz.
 | Routing DRC errors | 0 |
 | LVS errors | 0 |
 | Antenna violations | 0 |
-| RTL tests (cocotb) | 4/4 pass |
-| Gate-level test (cocotb on the routed netlist) | pass |
-| Max slew / fanout / cap warnings | 2,338 / 78 / 11 (warnings only, not checked by precheck) |
+| cocotb tests on RTL | 7/7 pass |
+| cocotb tests on the routed gate-level netlist | 7/7 pass |
+| Max slew / fanout / cap warnings | 468 / 39 / 1 (warnings only, not checked by precheck) |
 
-**How timing got here**
+## Verification
 
-| Run | Change | Worst slow-corner setup slack |
-|---|---|---|
-| 1 | first version, 50 MHz | −2.21 ns |
-| 2 | clock lowered to 40 MHz | −2.89 ns |
-| 3 | pixel and weights registered before the multipliers, 40 MHz | **+10.09 ns** |
+| What | Result |
+|---|---|
+| cocotb (`test/test.py`), RTL and gate-level in CI | 7 tests: identity, extremes (largest +/− sums, all −1, alternating), 4 random images, START with kept weights and mid-image restart, protocol abuse (extra bytes, writes and reads while busy, stray RD), reset mid-image, fastest legal strobes |
+| Gate-level stress (synthesized netlist, 64 parallel lanes, random power-up state) | 13 test groups, 832 full convolutions, every one of the 144 results checked |
+| Mutation testing | 14 deliberately planted bugs (wrong tap, sign step, rotation direction, missing +1, short readout, level vs edge strobe, ...): 14/14 caught |
+| VM testbench (`vm/tb_vm.v`, plain iverilog) | 8 tests, self-checking |
 
-In runs 1 and 2 one path went from the tap counter through the 64:1 image
-memory mux straight into the multiplier (about 28 ns in the slow corner), so
-slowing the clock did not help. Run 3 splits it with a register.
+## How it got to 2x2
+
+| Version | Synthesized area | Tiles | Slow-corner setup slack |
+|---|---|---|---|
+| Original RTL with byte-wide wrapper, 4 array multipliers, 50 MHz | 60,771 µm² | 3x2 | −2.21 ns |
+| Same at 40 MHz | 60,771 µm² | 3x2 | −2.89 ns |
+| Pixel and weights registered before the multipliers | 62,431 µm² | 3x2 | +10.09 ns |
+| **Streaming: line buffer, rotating weights, bit-serial MACs** | **26,159 µm²** | **2x2** | **+11.02 ns** |
+
+The random-access image and weight memories (and the logic to read them)
+were 70% of the old design. Streaming removed them.
 
 ## Source
 
 | File | What it is |
 |------|------------|
-| `src/project.v`   | Tiny Tapeout wrapper: synchronisers, load pointer, pin mapping |
-| `src/cnn9_core.v` | image/weight memories, address generation, FSM, result readout |
-| `src/cnn9_mac.v`  | 2-stage signed multiply-accumulate (after a fetch register stage in the core) |
+| `src/project.v`   | Tiny Tapeout wrapper: input synchronisers, strobe edge detection, pin mapping |
+| `src/cnn9_core.v` | weight loops, line buffer, window taps, FSM, result readout |
+| `src/cnn9_mac.v`  | bit-serial signed multiply-accumulate |
 | `test/test.py`    | cocotb tests (RTL and gate-level) |
 | `test/cnn_model.py` | golden model of the convolution |
+| `vm/`             | OpenLane config and iverilog testbench for bASICs VM |
+| `gds/`            | final layout and signoff reports |
 
 All module names start with `cnn9_` because module names must be unique
 across the whole Tiny Tapeout chip.
-
-### Changes from the original CNNAccelTeam9 RTL
-
-- The 144 x 20-bit output memory (memC) is gone. The core computes one output
-  position, then waits for the host to read its 4 results before going on.
-  This cut the flip-flop count from about 3,900 to 1,029.
-- The wide load/read ports became a byte-wide bus with an auto-incrementing
-  load pointer, to fit Tiny Tapeout's 8 in / 8 out / 8 bidirectional pins.
-- Patch and tap indices are now separate row/column counters, so there is no
-  divide-by-6 or divide-by-3 in hardware.
 
 ## Running the tests
 
@@ -108,21 +130,10 @@ Gate-level test (after hardening, copy the netlist to
 make -B GATES=yes
 ```
 
-## Hardening locally (LibreLane / OpenLane)
+Without pip (for example on bASICs VM), see [vm/README.md](vm/README.md).
 
-The GitHub Actions in this repo harden the design on every push, so a local
-run is optional. To run it locally, follow
-<https://tinytapeout.com/guides/local-hardening/>. In short:
+## Hardening
 
-```sh
-git clone -b ttsky26d https://github.com/TinyTapeout/tt-support-tools tt
-pip install -r tt/requirements.txt librelane==3.0.14
-export PDK_ROOT=~/ttsetup/pdk PDK=sky130A
-./tt/tt_tool.py --create-user-config
-./tt/tt_tool.py --harden
-./tt/tt_tool.py --print-stats
-./tt/tt_tool.py --print-warnings
-```
-
-If placement fails or utilisation is very low, change `tiles` in
-[info.yaml](info.yaml) (try `2x2` to save cost, `4x2` if 3x2 does not fit).
+The GitHub Actions in this repo harden the design on every push. To run
+OpenLane locally, see [vm/README.md](vm/README.md) or
+<https://tinytapeout.com/guides/local-hardening/>.

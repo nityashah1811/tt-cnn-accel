@@ -1,7 +1,7 @@
 # Running the flow on bASICs VM
 
 These are the same steps as the VM's "Adder From Scratch" guide, set up for
-this project. `config.yaml` copies Tiny Tapeout's settings (3x2 tile size, pin
+this project. `config.yaml` copies Tiny Tapeout's settings (2x2 tile size, pin
 positions, density) so the result should match the GitHub GDS action.
 
 Copy the project out of the shared folder first (shared folders are slow and
@@ -31,7 +31,8 @@ iverilog -g2012 -o tb_vm ../src/project.v ../src/cnn9_core.v ../src/cnn9_mac.v t
 vvp tb_vm
 ```
 
-It runs 8 tests (identity, both extremes, 5 random) and ends with
+It runs 8 tests (identity, both extremes, random images, new images with
+the same weights) and ends with
 `ALL TESTS PASSED`. Waves go to `tb_vm.vcd` (`gtkwave tb_vm.vcd`).
 
 The cocotb tests in `../test` (run by GitHub Actions) need
@@ -62,12 +63,18 @@ What to look for:
 
 | Metric | Good |
 |--------|------|
-| `design__instance__utilization` | first GitHub run got 0.71 at 3x2 (too full for 2x2) |
-| `timing__setup__ws` (worst setup slack) | 0 or more |
+| `design__instance__utilization` | must fit the 2x2 tile; see the GitHub number in ../README.md |
+| `timing__setup__ws` (worst setup slack) | 0 or more, in every corner (see below) |
 | `timing__hold__ws` (worst hold slack) | 0 or more |
 | `route__drc_errors` | 0 |
 | `antenna__violating__nets` | 0 (a few can be OK, TT precheck decides) |
 | LVS errors | 0 |
+
+Check every corner, not just typical (every line should be positive):
+
+```sh
+grep -E "timing__(setup|hold)__ws__corner" runs/RUN_*/final/metrics.csv
+```
 
 ## 5. Gate-level test
 
@@ -86,8 +93,8 @@ With pip available, the cocotb version is: copy
 `final/pnl/tt_um_nityashah1811_cnn_accel.pnl.v` to `../test/gate_level_netlist.v`,
 then `cd ../test && make -B GATES=yes`.
 
-## Trying 2x2 tiles
+## Other tile sizes
 
-In `config.yaml` set `DIE_AREA: [0, 0, 334.88, 225.76]` and
-`FP_DEF_TEMPLATE: dir::tt_block_2x2_pg.def`. If that passes, also change
-`tiles: "2x2"` in `../info.yaml` so the GitHub flow uses the same size.
+The project targets 2x2. For 3x2, set `DIE_AREA: [0, 0, 508.76, 225.76]` and
+`FP_DEF_TEMPLATE: dir::tt_block_3x2_pg.def` in `config.yaml`, and
+`tiles: "3x2"` in `../info.yaml`.
