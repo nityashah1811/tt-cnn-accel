@@ -11,7 +11,8 @@ of an 8x8 image with 4 filters at once.
 
 Four multiply-accumulate (MAC) units share one image pixel per clock and each
 uses its own filter's weight, so all 4 filters for one output position are
-done in 9 clocks. Each MAC has a 2-stage pipeline (multiply, then accumulate).
+done in 9 clocks. The datapath is a 3-stage pipeline: fetch (pixel and
+weights are registered), multiply, then accumulate.
 
 To save area there is no output memory. After each output position, the chip
 holds the 4 sums and waits for the host to read them (12 bytes) before it

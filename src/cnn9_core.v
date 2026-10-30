@@ -63,17 +63,34 @@ module cnn9_core (
   reg [2:0] orow, ocol;  // output position 0..5
   reg [1:0] tr, tc;      // tap row / col 0..2
   reg [3:0] k;           // tap index 0..8 (= tr*3 + tc)
-  reg       wait_cnt;
+  reg [1:0] wait_cnt;
   reg [1:0] fsel;        // which filter is being read out
   reg [1:0] bsel;        // which byte of that filter's sum
 
   // ------------------------------------------------------------- datapath
   wire [2:0] prow = orow + {1'b0, tr};
   wire [2:0] pcol = ocol + {1'b0, tc};
-  wire signed [7:0] a_data = img[{prow, pcol}];
+  wire [7:0] a_fetch = img[{prow, pcol}];
 
-  wire valid_in  = (state == S_RUN);
-  wire clear_acc = valid_in && (k == 4'd0);
+  wire issue       = (state == S_RUN);
+  wire issue_clear = issue && (k == 4'd0);
+
+  // Fetch stage: register the pixel and the 4 weights before they reach the
+  // multipliers. Without it, address add -> 64:1 memory mux -> multiplier is
+  // one ~28 ns path in the slow (ss, 100C) corner.
+  reg signed [7:0] a_q;
+  reg              valid_q, clear_q;
+
+  always @(posedge clk) begin
+    a_q <= a_fetch;
+    if (!rst_n) begin
+      valid_q <= 1'b0;
+      clear_q <= 1'b0;
+    end else begin
+      valid_q <= issue;
+      clear_q <= issue_clear;
+    end
+  end
 
   wire signed [ACC_W-1:0] acc[0:3];
 
@@ -82,6 +99,9 @@ module cnn9_core (
     for (g = 0; g < 4; g = g + 1) begin : g_mac
       localparam [5:0] FILT = g;
       wire [5:0] widx = {k, 2'b00} + FILT;  // tap*4 + filter
+      reg signed [7:0] b_q;
+
+      always @(posedge clk) b_q <= wgt[widx];
 
       cnn9_mac #(
           .DW   (8),
@@ -89,10 +109,10 @@ module cnn9_core (
       ) u_mac (
           .clk      (clk),
           .rst_n    (rst_n),
-          .a        (a_data),
-          .b        (wgt[widx]),
-          .valid_in (valid_in),
-          .clear_acc(clear_acc),
+          .a        (a_q),
+          .b        (b_q),
+          .valid_in (valid_q),
+          .clear_acc(clear_q),
           .acc_out  (acc[g])
       );
     end
@@ -125,7 +145,7 @@ module cnn9_core (
       tr       <= 2'd0;
       tc       <= 2'd0;
       k        <= 4'd0;
-      wait_cnt <= 1'b0;
+      wait_cnt <= 2'd0;
       fsel     <= 2'd0;
       bsel     <= 2'd0;
     end else begin
@@ -147,7 +167,7 @@ module cnn9_core (
             k        <= 4'd0;
             tr       <= 2'd0;
             tc       <= 2'd0;
-            wait_cnt <= 1'b0;
+            wait_cnt <= 2'd0;
             state    <= S_WAIT;
           end else begin
             k <= k + 4'd1;
@@ -161,10 +181,11 @@ module cnn9_core (
         end
 
         S_WAIT: begin
-          // last product lands in the accumulators one cycle after S_RUN
-          // ends; waiting two cycles leaves one cycle of margin.
-          wait_cnt <= 1'b1;
-          if (wait_cnt) begin
+          // fetch -> multiply -> accumulate: the last tap's sum is in the
+          // accumulators two cycles after S_RUN ends; waiting three cycles
+          // leaves one cycle of margin.
+          wait_cnt <= wait_cnt + 2'd1;
+          if (wait_cnt == 2'd2) begin
             fsel  <= 2'd0;
             bsel  <= 2'd0;
             state <= S_OUT;
