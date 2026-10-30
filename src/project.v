@@ -2,19 +2,25 @@
  * Copyright (c) 2026 Nitya Shah
  * SPDX-License-Identifier: Apache-2.0
  *
- * Tiny Tapeout wrapper for the CNNAccelTeam9 3x3 convolution accelerator.
+ * Tiny Tapeout wrapper for the CNNAccelTeam9 streaming 3x3 convolution
+ * accelerator (8x8 INT8 image, 4 filters, 6x6x4 INT20 output).
  *
  * Pins
- *   ui_in[7:0]   DATA   byte to load (pixel or weight, INT8)
- *   uio_in[0]    WR     rising edge: write DATA at the load pointer, pointer++
- *   uio_in[1]    SEL    0 = load image (64 bytes), 1 = load weights (36 bytes)
- *                       any change of SEL resets the load pointer to 0
- *   uio_in[2]    START  rising edge: start the convolution
- *   uio_in[3]    RD     rising edge: current result byte consumed, show next
- *   uio_out[5]   BUSY   convolution in progress
- *   uio_out[6]   DONE   all 144 results read out (cleared by START)
+ *   ui_in[7:0]   DATA   byte to write (weight or pixel, INT8)
+ *   uio_in[0]    WR     rising edge: write DATA
+ *   uio_in[1]    SEL    1 = weights (36 bytes), 0 = image pixels (64 bytes)
+ *                       any change of SEL restarts the byte count
+ *   uio_in[2]    START  rising edge: start a new image (restart the pixel
+ *                       count, clear DONE). Weights are kept.
+ *   uio_in[3]    RD     rising edge: current result byte read, show the next
+ *   uio_out[5]   BUSY   wait: the chip is not ready for the next write
+ *   uio_out[6]   DONE   the last of the 144 results has been read
  *   uio_out[7]   RVALID uo_out holds a valid result byte
  *   uo_out[7:0]  RESULT current result byte (0 when RVALID is low)
+ *
+ * Host loop: write the 36 weights (SEL=1), then the 64 pixels (SEL=0).
+ * After every write wait until BUSY is low; whenever RVALID is high, read
+ * 12 result bytes (pulse RD after each) first.
  *
  * All strobes go through 2-flop synchronisers, so the host can be a slow
  * microcontroller on its own clock. Hold DATA steady while WR is high.
@@ -55,32 +61,22 @@ module tt_um_nityashah1811_cnn_accel (
   wire start_pulse = sync2[2] & ~sync3[2];
   wire rd_pulse    = sync2[3] & ~sync3[3];
 
-  // --------------------------------------------------------- load pointer
-  reg  [5:0] ld_ptr;
-  wire       busy;
-
-  always @(posedge clk) begin
-    if (!rst_n || sel_changed || start_pulse) ld_ptr <= 6'd0;
-    else if (wr_pulse && !busy) ld_ptr <= ld_ptr + 6'd1;
-  end
-
   // ----------------------------------------------------------------- core
-  wire       done, rvalid;
+  wire       busy, done, rvalid;
   wire [7:0] rbyte;
 
   cnn9_core u_core (
-      .clk    (clk),
-      .rst_n  (rst_n),
-      .ld_we  (wr_pulse),
-      .ld_sel (sel),
-      .ld_addr(ld_ptr),
-      .ld_data(ui_in),
-      .start  (start_pulse),
-      .rd_next(rd_pulse),
-      .busy   (busy),
-      .done   (done),
-      .rvalid (rvalid),
-      .rbyte  (rbyte)
+      .clk       (clk),
+      .rst_n     (rst_n),
+      .ld_we     (wr_pulse),
+      .ld_sel    (sel),
+      .ld_ptr_clr(sel_changed | start_pulse),
+      .ld_data   (ui_in),
+      .rd_next   (rd_pulse),
+      .busy      (busy),
+      .done      (done),
+      .rvalid    (rvalid),
+      .rbyte     (rbyte)
   );
 
   // -------------------------------------------------------------- outputs

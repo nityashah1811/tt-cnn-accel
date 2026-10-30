@@ -2,21 +2,29 @@
  * Copyright (c) 2026 Nitya Shah
  * SPDX-License-Identifier: Apache-2.0
  *
- * 3x3 convolution core: 8x8 INT8 image, 4 INT8 filters, 6x6x4 INT20 output.
+ * Streaming 3x3 convolution core: 8x8 INT8 image, 4 INT8 filters,
+ * 6x6x4 INT20 output. Fits 2x2 Tiny Tapeout tiles.
  *
- *   img[r*8 + c]          image, row-major            (64 x 8 bit)
- *   wgt[tap*4 + filter]   weights, tap = fr*3 + fc    (36 x 8 bit)
+ * Weights (load first, 36 bytes, order wgt[tap*4 + filter], tap = fr*3+fc)
+ *   Each filter keeps its 9 weights in a 72-bit circular shift register,
+ *   tap 0 bit 0 at the head. A written byte is shifted into its filter's
+ *   register one bit per clock (8 clocks, BUSY is high meanwhile).
+ *   During compute every register rotates one bit per clock, which is
+ *   exactly the order the bit-serial MACs consume them, so no weight lookup
+ *   is needed. 72 rotations per output position bring them back to the start.
  *
- * The four MACs share one image pixel per cycle and each gets its own
- * weight, so one output patch (all 4 filters) takes 9 cycles.
+ * Image (stream 64 bytes, row-major)
+ *   A 19-pixel line buffer holds the newest pixel and the 18 before it
+ *   (two rows plus three). When the pixel at (row, col) arrives with
+ *   row >= 2 and col >= 2, the 3x3 window whose bottom-right corner it is
+ *   sits at fixed buffer positions, and output (row-2, col-2) is computed.
  *
- * Results are NOT stored in an output memory (that would be 144 x 20 bit,
- * most of the area). Instead the core computes one patch, holds the 4 sums
- * in the MAC accumulators, and waits until the host has read all 12 result
- * bytes before it moves on to the next patch.
+ * Compute: 9 taps x (1 fetch + 8 weight bits) = 81 clocks per output
+ * position, 4 filters in parallel. The 4 sums then wait in the
+ * accumulators (RVALID) until the host has read all 12 bytes.
  *
- * Readout order per patch: filter 0..3, each as 3 bytes, low byte first.
- * The 20-bit sum is sign-extended to 24 bits.
+ * Readout per position: filter 0..3, 3 bytes each, low byte first, the
+ * 20-bit sum sign-extended to 24 bits. Positions come out row-major.
  */
 
 `default_nettype none
@@ -24,102 +32,132 @@
 module cnn9_core (
     input  wire       clk,
     input  wire       rst_n,
-    // load port (only acts while idle)
-    input  wire       ld_we,
-    input  wire       ld_sel,    // 0 = image, 1 = weights
-    input  wire [5:0] ld_addr,
+    input  wire       ld_we,      // 1-cycle pulse: write ld_data
+    input  wire       ld_sel,     // 0 = image pixel, 1 = weight
+    input  wire       ld_ptr_clr, // 1-cycle pulse: restart the byte count, clear DONE
     input  wire [7:0] ld_data,
-    // control
-    input  wire       start,     // 1-cycle pulse
-    input  wire       rd_next,   // 1-cycle pulse: current result byte consumed
-    // status / result
-    output wire       busy,
-    output reg        done,      // stays high until the next start
-    output wire       rvalid,    // rbyte holds a valid result byte
+    input  wire       rd_next,    // 1-cycle pulse: current result byte consumed
+    output wire       busy,       // not ready for the next write
+    output reg        done,       // last result read; cleared by ld_ptr_clr
+    output wire       rvalid,     // rbyte holds a valid result byte
     output reg  [7:0] rbyte
 );
 
-  localparam ACC_W = 20;
-
-  localparam S_IDLE = 2'd0;  // waiting for start, loads allowed
-  localparam S_RUN  = 2'd1;  // feeding 9 taps into the MACs
-  localparam S_WAIT = 2'd2;  // letting the MAC pipeline drain
-  localparam S_OUT  = 2'd3;  // host is reading the 12 result bytes
+  localparam S_IDLE = 2'd0;  // ready for a write
+  localparam S_RUN  = 2'd1;  // computing one output position
+  localparam S_OUT  = 2'd2;  // host is reading the 12 result bytes
 
   reg [1:0] state;
 
-  // ---------------------------------------------------------------- memories
-  reg [7:0] img[0:63];
-  reg [7:0] wgt[0:35];
+  // ------------------------------------------------------------ load control
+  reg  [6:0] ptr;       // bytes written since the last clear (saturates)
+  reg  [3:0] ser_cnt;   // weight bits still to shift in
+  reg  [7:0] ser_byte;  // weight byte being shifted in, LSB first
+  reg  [1:0] ser_f;     // which filter it belongs to
+
+  wire ser_busy   = (ser_cnt != 4'd0);
+  wire full       = ld_sel ? (ptr >= 7'd36) : ptr[6];
+  wire accept     = ld_we && (state == S_IDLE) && !ser_busy && !full;
+  wire pix_accept = accept && !ld_sel;
+  wire wgt_accept = accept && ld_sel;
+
+  // the pixel being accepted is number ptr: row ptr[5:3], col ptr[2:0]
+  wire win_valid  = (ptr[5:3] >= 3'd2) && (ptr[2:0] >= 3'd2);
+  wire pix_last   = (ptr[5:0] == 6'd63);
 
   always @(posedge clk) begin
-    if (state == S_IDLE && ld_we) begin
-      if (!ld_sel) img[ld_addr] <= ld_data;
-      else if (ld_addr < 6'd36) wgt[ld_addr] <= ld_data;
+    if (!rst_n) begin
+      ptr      <= 7'd0;
+      ser_cnt  <= 4'd0;
+      ser_byte <= 8'd0;
+      ser_f    <= 2'd0;
+    end else begin
+      if (ld_ptr_clr) ptr <= 7'd0;
+      else if (accept) ptr <= ptr + 7'd1;
+
+      if (wgt_accept) begin
+        ser_byte <= ld_data;
+        ser_f    <= ptr[1:0];
+        ser_cnt  <= 4'd8;
+      end else if (ser_busy) begin
+        ser_byte <= {1'b0, ser_byte[7:1]};
+        ser_cnt  <= ser_cnt - 4'd1;
+      end
     end
+  end
+
+  // ------------------------------------------------------------ line buffer
+  // lb[8*i +: 8] = the pixel written i writes ago (i = 0 is the newest)
+  reg [19*8-1:0] lb;
+  always @(posedge clk) begin
+    if (pix_accept) lb <= {lb[18*8-1:0], ld_data};
   end
 
   // ---------------------------------------------------------------- counters
-  reg [2:0] orow, ocol;  // output position 0..5
-  reg [1:0] tr, tc;      // tap row / col 0..2
-  reg [3:0] k;           // tap index 0..8 (= tr*3 + tc)
-  reg [1:0] wait_cnt;
-  reg [1:0] fsel;        // which filter is being read out
-  reg [1:0] bsel;        // which byte of that filter's sum
+  reg [3:0] k;       // tap 0..8 (= fr*3 + fc)
+  reg [3:0] step;    // 0 = fetch, 1..8 = weight bit 0..7
+  reg       pos_last;  // this output position is the last one (5,5)
+  reg [1:0] fsel;    // which filter is being read out
+  reg [1:0] bsel;    // which byte of that filter's sum
 
-  // ------------------------------------------------------------- datapath
-  wire [2:0] prow = orow + {1'b0, tr};
-  wire [2:0] pcol = ocol + {1'b0, tc};
-  wire [7:0] a_fetch = img[{prow, pcol}];
+  wire fetch = (state == S_RUN) && (step == 4'd0);
+  wire add   = (state == S_RUN) && (step != 4'd0);
+  wire sub   = (step == 4'd8);
 
-  wire issue       = (state == S_RUN);
-  wire issue_clear = issue && (k == 4'd0);
-
-  // Fetch stage: register the pixel and the 4 weights before they reach the
-  // multipliers. Without it, address add -> 64:1 memory mux -> multiplier is
-  // one ~28 ns path in the slow (ss, 100C) corner.
-  reg signed [7:0] a_q;
-  reg              valid_q, clear_q;
-
-  always @(posedge clk) begin
-    a_q <= a_fetch;
-    if (!rst_n) begin
-      valid_q <= 1'b0;
-      clear_q <= 1'b0;
-    end else begin
-      valid_q <= issue;
-      clear_q <= issue_clear;
-    end
+  // tap (fr, fc) of the window is (2-fr)*8 + (2-fc) pixels before the newest
+  reg [7:0] a_fetch;
+  always @(*) begin
+    case (k)
+      4'd0:    a_fetch = lb[18*8+:8];
+      4'd1:    a_fetch = lb[17*8+:8];
+      4'd2:    a_fetch = lb[16*8+:8];
+      4'd3:    a_fetch = lb[10*8+:8];
+      4'd4:    a_fetch = lb[9*8+:8];
+      4'd5:    a_fetch = lb[8*8+:8];
+      4'd6:    a_fetch = lb[2*8+:8];
+      4'd7:    a_fetch = lb[1*8+:8];
+      default: a_fetch = lb[0*8+:8];
+    endcase
   end
 
-  wire signed [ACC_W-1:0] acc[0:3];
+  // pixel shifted left once per weight bit, shared by all 4 MACs
+  reg [15:0] a_sh;
+  always @(posedge clk) begin
+    if (fetch) a_sh <= {{8{a_fetch[7]}}, a_fetch};
+    else if (add) a_sh <= {a_sh[14:0], 1'b0};
+  end
+
+  wire start_pos = pix_accept && win_valid;
+
+  wire [19:0] acc[0:3];
 
   genvar g;
   generate
-    for (g = 0; g < 4; g = g + 1) begin : g_mac
-      localparam [5:0] FILT = g;
-      wire [5:0] widx = {k, 2'b00} + FILT;  // tap*4 + filter
-      reg signed [7:0] b_q;
+    for (g = 0; g < 4; g = g + 1) begin : g_filt
+      localparam [1:0] F = g;
+      reg  [71:0] wsr;  // this filter's 9 weights, rotating
+      wire        ser_in = ser_busy && (ser_f == F);
 
-      always @(posedge clk) b_q <= wgt[widx];
+      always @(posedge clk) begin
+        if (add) wsr <= {wsr[0], wsr[71:1]};
+        else if (ser_in) wsr <= {ser_byte[0], wsr[71:1]};
+      end
 
-      cnn9_mac #(
-          .DW   (8),
-          .ACC_W(ACC_W)
-      ) u_mac (
-          .clk      (clk),
-          .rst_n    (rst_n),
-          .a        (a_q),
-          .b        (b_q),
-          .valid_in (valid_q),
-          .clear_acc(clear_q),
-          .acc_out  (acc[g])
+      cnn9_mac u_mac (
+          .clk   (clk),
+          .rst_n (rst_n),
+          .clr   (start_pos),
+          .add   (add),
+          .sub   (sub),
+          .bbit  (wsr[0]),
+          .a_term(a_sh),
+          .acc   (acc[g])
       );
     end
   endgenerate
 
   // ------------------------------------------------------------ readout
-  wire [ACC_W-1:0] sel_acc = acc[fsel];
+  wire [19:0] sel_acc = acc[fsel];
   always @(*) begin
     case (bsel)
       2'd0:    rbyte = sel_acc[7:0];
@@ -128,87 +166,58 @@ module cnn9_core (
     endcase
   end
 
-  assign busy   = (state != S_IDLE);
+  assign busy   = (state != S_IDLE) || ser_busy;
   assign rvalid = (state == S_OUT);
 
-  wire last_tap  = (k == 4'd8);
   wire last_byte = (fsel == 2'd3) && (bsel == 2'd2);
-  wire last_patch = (orow == 3'd5) && (ocol == 3'd5);
 
   // ---------------------------------------------------------------- FSM
   always @(posedge clk) begin
     if (!rst_n) begin
       state    <= S_IDLE;
       done     <= 1'b0;
-      orow     <= 3'd0;
-      ocol     <= 3'd0;
-      tr       <= 2'd0;
-      tc       <= 2'd0;
       k        <= 4'd0;
-      wait_cnt <= 2'd0;
+      step     <= 4'd0;
+      pos_last <= 1'b0;
       fsel     <= 2'd0;
       bsel     <= 2'd0;
     end else begin
+      if (ld_ptr_clr) done <= 1'b0;
+
       case (state)
         S_IDLE: begin
-          if (start) begin
-            state <= S_RUN;
-            done  <= 1'b0;
-            orow  <= 3'd0;
-            ocol  <= 3'd0;
-            tr    <= 2'd0;
-            tc    <= 2'd0;
-            k     <= 4'd0;
+          if (start_pos) begin
+            state    <= S_RUN;
+            k        <= 4'd0;
+            step     <= 4'd0;
+            pos_last <= pix_last;
           end
         end
 
         S_RUN: begin
-          if (last_tap) begin
-            k        <= 4'd0;
-            tr       <= 2'd0;
-            tc       <= 2'd0;
-            wait_cnt <= 2'd0;
-            state    <= S_WAIT;
-          end else begin
-            k <= k + 4'd1;
-            if (tc == 2'd2) begin
-              tc <= 2'd0;
-              tr <= tr + 2'd1;
+          if (step == 4'd8) begin
+            step <= 4'd0;
+            if (k == 4'd8) begin
+              // the last add lands at this edge: sums are final in S_OUT
+              k     <= 4'd0;
+              fsel  <= 2'd0;
+              bsel  <= 2'd0;
+              state <= S_OUT;
             end else begin
-              tc <= tc + 2'd1;
+              k <= k + 4'd1;
             end
-          end
-        end
-
-        S_WAIT: begin
-          // fetch -> multiply -> accumulate: the last tap's sum is in the
-          // accumulators two cycles after S_RUN ends; waiting three cycles
-          // leaves one cycle of margin.
-          wait_cnt <= wait_cnt + 2'd1;
-          if (wait_cnt == 2'd2) begin
-            fsel  <= 2'd0;
-            bsel  <= 2'd0;
-            state <= S_OUT;
+          end else begin
+            step <= step + 4'd1;
           end
         end
 
         S_OUT: begin
           if (rd_next) begin
             if (last_byte) begin
-              fsel <= 2'd0;
-              bsel <= 2'd0;
-              if (last_patch) begin
-                state <= S_IDLE;
-                done  <= 1'b1;
-              end else begin
-                state <= S_RUN;
-                if (ocol == 3'd5) begin
-                  ocol <= 3'd0;
-                  orow <= orow + 3'd1;
-                end else begin
-                  ocol <= ocol + 3'd1;
-                end
-              end
+              fsel  <= 2'd0;
+              bsel  <= 2'd0;
+              state <= S_IDLE;
+              if (pos_last) done <= 1'b1;
             end else if (bsel == 2'd2) begin
               bsel <= 2'd0;
               fsel <= fsel + 2'd1;
@@ -217,6 +226,8 @@ module cnn9_core (
             end
           end
         end
+
+        default: state <= S_IDLE;
       endcase
     end
   end

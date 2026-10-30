@@ -2,51 +2,32 @@
  * Copyright (c) 2026 Nitya Shah
  * SPDX-License-Identifier: Apache-2.0
  *
- * Two-stage signed multiply-accumulate.
- *   stage 1: register a*b (and the valid / clear flags)
- *   stage 2: acc <= clear ? prod : acc + prod
- * acc_out holds its value while valid_in is low, so the top level can read
- * the finished sums straight out of the accumulators.
+ * Bit-serial signed multiply-accumulate: acc += a * b over 8 clocks.
+ *
+ * Each clock the core supplies one weight bit (LSB first) and a_term =
+ * a << j for that bit j. Two's complement: bits 0..6 add a << j, bit 7
+ * subtracts a << 7 (sub = 1). One adder instead of an 8x8 multiplier.
  */
 
 `default_nettype none
 
-module cnn9_mac #(
-    parameter DW    = 8,
-    parameter ACC_W = 20
-) (
-    input  wire                    clk,
-    input  wire                    rst_n,
-    input  wire signed [DW-1:0]    a,
-    input  wire signed [DW-1:0]    b,
-    input  wire                    valid_in,
-    input  wire                    clear_acc,
-    output reg  signed [ACC_W-1:0] acc_out
+module cnn9_mac (
+    input  wire        clk,
+    input  wire        rst_n,
+    input  wire        clr,     // acc <= 0
+    input  wire        add,     // this clock carries a weight bit
+    input  wire        sub,     // the weight bit is the sign bit: subtract
+    input  wire        bbit,    // current weight bit
+    input  wire [15:0] a_term,  // sign-extended a << j
+    output reg  [19:0] acc
 );
 
-  reg signed [2*DW-1:0] prod;
-  reg                   s1_valid;
-  reg                   s1_clear;
+  wire [19:0] term   = {{4{a_term[15]}}, a_term};
+  wire [19:0] addend = sub ? ~term : term;  // -x = ~x + 1, the +1 is the carry-in
 
   always @(posedge clk) begin
-    if (!rst_n) begin
-      prod     <= {2 * DW{1'b0}};
-      s1_valid <= 1'b0;
-      s1_clear <= 1'b0;
-    end else begin
-      prod     <= a * b;
-      s1_valid <= valid_in;
-      s1_clear <= clear_acc;
-    end
-  end
-
-  always @(posedge clk) begin
-    if (!rst_n) begin
-      acc_out <= {ACC_W{1'b0}};
-    end else if (s1_valid) begin
-      if (s1_clear) acc_out <= {{(ACC_W - 2 * DW) {prod[2*DW-1]}}, prod};
-      else acc_out <= acc_out + {{(ACC_W - 2 * DW) {prod[2*DW-1]}}, prod};
-    end
+    if (!rst_n || clr) acc <= 20'd0;
+    else if (add && bbit) acc <= acc + addend + {19'd0, sub};
   end
 
 endmodule
