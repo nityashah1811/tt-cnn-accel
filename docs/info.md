@@ -38,7 +38,7 @@ Toprak Celikel.
 
 This project started in the **Basics of ASICs (bASICs)** course at the
 **MIT Beaver Works Summer Institute (BWSI)**
-(<https://beaverworks.ll.mit.edu/CMS/bw/bwsi>). Thank you to the BWSI
+(<https://bwsi.mit.edu/bwsi-programs-2/basics-of-asics/>). Thank you to the BWSI
 instructors and staff for teaching us the RTL-to-GDS flow, and to the Tiny
 Tapeout team for making it possible to put the design on real silicon.
 
