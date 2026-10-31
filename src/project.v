@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Nitya Shah
+ * Copyright (c) 2026 Nitya Shah, Kush Shah, Kiran Karthik, Toprak Celikel
  * SPDX-License-Identifier: Apache-2.0
  *
  * Tiny Tapeout wrapper for the CNNAccelTeam9 streaming 3x3 convolution

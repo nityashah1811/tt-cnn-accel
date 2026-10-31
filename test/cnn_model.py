@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2026 Nitya Shah
+# SPDX-FileCopyrightText: © 2026 Nitya Shah, Kush Shah, Kiran Karthik, Toprak Celikel
 # SPDX-License-Identifier: Apache-2.0
 """Golden model for the convolution: same math as CNNAccelTeam9's cnn_sw_timed.py.
 

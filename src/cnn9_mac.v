@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Nitya Shah
+ * Copyright (c) 2026 Nitya Shah, Kush Shah, Kiran Karthik, Toprak Celikel
  * SPDX-License-Identifier: Apache-2.0
  *
  * Bit-serial signed multiply-accumulate: acc += a * b over 8 clocks.

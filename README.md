@@ -6,6 +6,12 @@ A streaming 3x3 convolution accelerator from CNNAccelTeam9, packaged for
 [Tiny Tapeout](https://tinytapeout.com): one CNN layer on an 8x8 INT8
 image with 2 filters computed in parallel, 6x6x2 INT20 output.
 
+**Team:** Nitya Shah, Kush Shah, Kiran Karthik, Toprak Celikel
+
+Built in the **Basics of ASICs (bASICs)** course at the
+[MIT Beaver Works Summer Institute (BWSI)](https://beaverworks.ll.mit.edu/CMS/bw/bwsi).
+Thank you to the BWSI instructors and staff, and to the Tiny Tapeout team.
+
 - How it works, pinout and how to drive it: [docs/info.md](docs/info.md)
 - Top module: `tt_um_nityashah1811_cnn_accel` ([src/project.v](src/project.v))
 - **1x2 tiles, 40 MHz, 65% utilisation, timing met in every corner**

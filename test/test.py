@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2026 Nitya Shah
+# SPDX-FileCopyrightText: © 2026 Nitya Shah, Kush Shah, Kiran Karthik, Toprak Celikel
 # SPDX-License-Identifier: Apache-2.0
 """cocotb tests for tt_um_nityashah1811_cnn_accel (streaming, 2 filters).
 

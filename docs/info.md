@@ -31,7 +31,16 @@ Inside:
 All control inputs pass through 2-flop synchronisers, so the host can be a
 slow microcontroller (such as the demo board's RP2040) on its own clock.
 
-Designed by CNNAccelTeam9.
+### Team and acknowledgments
+
+Designed by **CNNAccelTeam9**: Nitya Shah, Kush Shah, Kiran Karthik and
+Toprak Celikel.
+
+This project started in the **Basics of ASICs (bASICs)** course at the
+**MIT Beaver Works Summer Institute (BWSI)**
+(<https://beaverworks.ll.mit.edu/CMS/bw/bwsi>). Thank you to the BWSI
+instructors and staff for teaching us the RTL-to-GDS flow, and to the Tiny
+Tapeout team for making it possible to put the design on real silicon.
 
 ## How to test
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Nitya Shah
+ * Copyright (c) 2026 Nitya Shah, Kush Shah, Kiran Karthik, Toprak Celikel
  * SPDX-License-Identifier: Apache-2.0
  *
  * Streaming 3x3 convolution core: 8x8 INT8 image, 2 INT8 filters,
