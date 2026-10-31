@@ -2,7 +2,7 @@
 project:
   title:        "CNN Conv Accelerator"      # Project title
   author:       "Nitya Shah, Kush Shah, Kiran Karthik, Toprak Celikel"      # Your name
-  discord:      "YOUR_DISCORD_USERNAME"      # TODO: replace with your Discord username before submitting, or set back to "" (optional)
+  discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
   description:  "Streaming 3x3 CNN convolution: 8x8 INT8 image, 2 filters, line buffer + bit-serial MACs, INT20 out"      # One line description of what your project does
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
   clock_hz:     40000000       # Clock frequency in Hz (or 0 if not applicable)
