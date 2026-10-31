@@ -9,7 +9,7 @@ image with 2 filters computed in parallel, 6x6x2 INT20 output.
 **Team:** Nitya Shah, Kush Shah, Kiran Karthik, Toprak Celikel
 
 Built in the **Basics of ASICs (bASICs)** course at the
-[MIT Beaver Works Summer Institute (BWSI)]([https://beaverworks.ll.mit.edu/CMS/bw/bwsi](https://bwsi.mit.edu/bwsi-programs-2/basics-of-asics/)).
+[MIT Beaver Works Summer Institute (BWSI)]([https://bwsi.mit.edu/bwsi-programs-2/basics-of-asics/]).
 Thank you to the BWSI instructors and staff, and to the Tiny Tapeout team.
 
 - How it works, pinout and how to drive it: [docs/info.md](docs/info.md)
