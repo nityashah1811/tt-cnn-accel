@@ -3,12 +3,12 @@ project:
   title:        "CNN Conv Accelerator"      # Project title
   author:       "Nitya Shah (CNNAccelTeam9)"      # Your name
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "Streaming 3x3 CNN convolution: 8x8 INT8 image, 4 filters, line buffer + 4 bit-serial MACs, INT20 out"      # One line description of what your project does
+  description:  "Streaming 3x3 CNN convolution: 8x8 INT8 image, 2 filters, line buffer + bit-serial MACs, INT20 out"      # One line description of what your project does
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
   clock_hz:     40000000       # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "2x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
+  tiles: "1x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_nityashah1811_cnn_accel"

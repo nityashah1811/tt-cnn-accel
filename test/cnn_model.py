@@ -3,8 +3,8 @@
 """Golden model for the convolution: same math as CNNAccelTeam9's cnn_sw_timed.py.
 
   image   img[r*8 + c]          INT8, 8x8
-  weights wgt[tap*4 + filter]   INT8, tap = fr*3 + fc
-  output  out[patch*4 + filter] INT20, patch = orow*6 + ocol
+  weights wgt[tap*2 + filter]   INT8, tap = fr*3 + fc
+  output  out[patch*2 + filter] INT20, patch = orow*6 + ocol
 
 Written as plain nested loops (no numpy) so it is easy to check by eye and
 does not share any indexing tricks with the RTL.
@@ -12,15 +12,15 @@ does not share any indexing tricks with the RTL.
 
 IFM = 8
 KS = 3
-P = 4
+P = 2
 OFM = IFM - KS + 1  # 6
 N_IMG = IFM * IFM  # 64
-N_WGT = KS * KS * P  # 36
-N_OUT = OFM * OFM * P  # 144
+N_WGT = KS * KS * P  # 18
+N_OUT = OFM * OFM * P  # 72
 
 
 def conv(img, wgt):
-    """img: 64 signed ints, wgt: 36 signed ints -> 144 signed ints."""
+    """img: 64 signed ints, wgt: 18 signed ints -> 72 signed ints."""
     assert len(img) == N_IMG and len(wgt) == N_WGT
     out = []
     for orow in range(OFM):

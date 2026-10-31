@@ -3,10 +3,10 @@
 //   iverilog -g2012 -o tb_vm ../src/project.v ../src/cnn9_core.v ../src/cnn9_mac.v tb_vm.v
 //   vvp tb_vm
 //
-// Drives the pins like the cocotb test: 36 weights (SEL=1), then 64 pixels
-// (SEL=0). After each write it waits for BUSY to drop, reading 12 result
+// Drives the pins like the cocotb test: 18 weights (SEL=1), then 64 pixels
+// (SEL=0). After each write it waits for BUSY to drop, reading 6 result
 // bytes whenever RVALID is high. Expected results are computed with plain
-// loops and all 144 are compared for each test. Ends with
+// loops and all 72 (6x6 positions x 2 filters) are compared for each test. Ends with
 // "ALL TESTS PASSED" or an error count.
 
 `timescale 1ns / 1ps
@@ -16,6 +16,7 @@ module tb_vm;
 
   localparam WR = 0, SEL = 1, START = 2, RD = 3;
   localparam BUSY = 5, DONE = 6, RVALID = 7;
+  localparam P = 2, NW = 18, NOUT = 72;  // filters, weights, results
 
   reg clk = 1'b0;
   always #12.5 clk = ~clk;  // 40 MHz
@@ -38,9 +39,9 @@ module tb_vm;
   );
 
   integer img    [0:63];   // img[row*8 + col]
-  integer wgt    [0:35];   // wgt[tap*4 + filter], tap = fr*3 + fc
-  integer exp_out[0:143];  // out[(orow*6 + ocol)*4 + filter]
-  integer got    [0:143];
+  integer wgt    [0:NW-1];    // wgt[tap*P + filter], tap = fr*3 + fc
+  integer exp_out[0:NOUT-1];  // out[(orow*6 + ocol)*P + filter]
+  integer got    [0:NOUT-1];
   integer ngot;
   integer errors = 0;
   integer seed = 12345;
@@ -63,12 +64,12 @@ module tb_vm;
     end
   endtask
 
-  // read the 12 bytes of one output position into got[]
+  // read the 3*P bytes of one output position into got[]
   task read_position;
     integer f, b;
     reg [23:0] v;
     begin
-      for (f = 0; f < 4; f = f + 1) begin
+      for (f = 0; f < P; f = f + 1) begin
         v = 24'd0;
         for (b = 0; b < 3; b = b + 1) begin
           if (!uio_out[RVALID]) begin
@@ -78,7 +79,7 @@ module tb_vm;
           v = v | ({16'd0, uo_out} << (8 * b));
           strobe(RD);
         end
-        if (ngot < 144) got[ngot] = {{8{v[23]}}, v};
+        if (ngot < NOUT) got[ngot] = {{8{v[23]}}, v};
         ngot = ngot + 1;
       end
     end
@@ -117,7 +118,7 @@ module tb_vm;
     begin
       uio_in[SEL] = 1'b1;
       wait_clks(4);
-      for (k = 0; k < 36; k = k + 1) write_byte(wgt[k]);
+      for (k = 0; k < NW; k = k + 1) write_byte(wgt[k]);
       uio_in[SEL] = 1'b0;  // also restarts the pixel count
       wait_clks(4);
     end
@@ -135,17 +136,17 @@ module tb_vm;
     begin
       for (orow = 0; orow < 6; orow = orow + 1)
         for (ocol = 0; ocol < 6; ocol = ocol + 1)
-          for (f = 0; f < 4; f = f + 1) begin
+          for (f = 0; f < P; f = f + 1) begin
             s = 0;
             for (fr = 0; fr < 3; fr = fr + 1)
               for (fc = 0; fc < 3; fc = fc + 1)
-                s = s + img[(orow + fr) * 8 + (ocol + fc)] * wgt[(fr * 3 + fc) * 4 + f];
-            exp_out[(orow * 6 + ocol) * 4 + f] = s;
+                s = s + img[(orow + fr) * 8 + (ocol + fc)] * wgt[(fr * 3 + fc) * P + f];
+            exp_out[(orow * 6 + ocol) * P + f] = s;
           end
     end
   endtask
 
-  // load weights + stream image, then compare all 144 results
+  // load weights + stream image, then compare all NOUT results
   task run_and_check(input integer test_id, input integer reload_weights);
     integer r, bad;
     begin
@@ -155,15 +156,15 @@ module tb_vm;
       if (reload_weights) load_weights;
       else strobe(START);  // new image, same weights
       stream_image;
-      if (ngot != 144) begin
-        $display("  test %0d: got %0d results, expected 144", test_id, ngot);
+      if (ngot != NOUT) begin
+        $display("  test %0d: got %0d results, expected %0d", test_id, ngot, NOUT);
         bad = bad + 1;
       end
-      for (r = 0; r < 144 && r < ngot; r = r + 1) begin
+      for (r = 0; r < NOUT && r < ngot; r = r + 1) begin
         if (got[r] !== exp_out[r]) begin
           if (bad < 5)
             $display("  test %0d: out[%0d] (position %0d, filter %0d) got %0d, expected %0d",
-                     test_id, r, r / 4, r % 4, got[r], exp_out[r]);
+                     test_id, r, r / P, r % P, got[r], exp_out[r]);
           bad = bad + 1;
         end
       end
@@ -171,7 +172,7 @@ module tb_vm;
         $display("  test %0d: status wrong at end (uio_out=%b uo_out=%h)", test_id, uio_out, uo_out);
         bad = bad + 1;
       end
-      if (bad == 0) $display("test %0d: PASS (144/144 results match)", test_id);
+      if (bad == 0) $display("test %0d: PASS (%0d/%0d results match)", test_id, NOUT, NOUT);
       else $display("test %0d: FAIL (%0d problems)", test_id, bad);
       errors = errors + bad;
     end
@@ -190,7 +191,7 @@ module tb_vm;
   task random_weights;
     integer k, rv;
     begin
-      for (k = 0; k < 36; k = k + 1) begin
+      for (k = 0; k < NW; k = k + 1) begin
         rv = $random(seed);
         wgt[k] = (rv & 255) - 128;
       end
@@ -211,12 +212,12 @@ module tb_vm;
 
     // test 1: identity (centre tap of filter 0 = 1)
     for (i = 0; i < 64; i = i + 1) img[i] = i;
-    for (i = 0; i < 36; i = i + 1) wgt[i] = (i == 16) ? 1 : 0;  // tap 4, filter 0
+    for (i = 0; i < NW; i = i + 1) wgt[i] = (i == 4 * P) ? 1 : 0;  // tap 4, filter 0
     run_and_check(1, 1);
 
     // test 2: largest positive sum (-128 * -128 * 9)
     for (i = 0; i < 64; i = i + 1) img[i] = -128;
-    for (i = 0; i < 36; i = i + 1) wgt[i] = -128;
+    for (i = 0; i < NW; i = i + 1) wgt[i] = -128;
     run_and_check(2, 1);
 
     // test 3: largest negative sum (127 * -128 * 9), same weights via START

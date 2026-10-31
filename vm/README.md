@@ -1,7 +1,7 @@
 # Running the flow on bASICs VM
 
 These are the same steps as the VM's "Adder From Scratch" guide, set up for
-this project. `config.yaml` copies Tiny Tapeout's settings (2x2 tile size, pin
+this project. `config.yaml` copies Tiny Tapeout's settings (1x2 tile size, pin
 positions, density) so the result should match the GitHub GDS action.
 
 Copy the project out of the shared folder first (shared folders are slow and
@@ -63,7 +63,7 @@ What to look for:
 
 | Metric | Good |
 |--------|------|
-| `design__instance__utilization` | must fit the 2x2 tile; see the GitHub number in ../README.md |
+| `design__instance__utilization` | must fit the 1x2 tile; see the GitHub number in ../README.md |
 | `timing__setup__ws` (worst setup slack) | 0 or more, in every corner (see below) |
 | `timing__hold__ws` (worst hold slack) | 0 or more |
 | `route__drc_errors` | 0 |
@@ -95,6 +95,6 @@ then `cd ../test && make -B GATES=yes`.
 
 ## Other tile sizes
 
-The project targets 2x2. For 3x2, set `DIE_AREA: [0, 0, 508.76, 225.76]` and
-`FP_DEF_TEMPLATE: dir::tt_block_3x2_pg.def` in `config.yaml`, and
-`tiles: "3x2"` in `../info.yaml`.
+The project targets 1x2. For 2x2, set `DIE_AREA: [0, 0, 334.88, 225.76]` and
+`FP_DEF_TEMPLATE: dir::tt_block_2x2_pg.def` in `config.yaml`, and
+`tiles: "2x2"` in `../info.yaml`.

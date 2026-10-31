@@ -1,13 +1,13 @@
 ## How it works
 
 This chip runs one layer of a convolutional neural network: a 3x3
-convolution of an 8x8 image with 4 filters at once, streaming the image in
+convolution of an 8x8 image with 2 filters at once, streaming the image in
 one pixel at a time.
 
-- **Weights:** 4 filters of 3x3, signed 8-bit (INT8), sent as
-  `wgt[tap*4 + filter]` with `tap = row*3 + col`.
-- **Image:** 8x8 pixels, signed 8-bit, sent row by row.
-- **Output:** 6x6 positions x 4 filters = 144 signed results, 20 bits each
+- **Weights:** 2 filters of 3x3, signed 8-bit (INT8), sent as
+  `wgt[tap*2 + filter]` with `tap = row*3 + col` (18 bytes).
+- **Image:** 8x8 pixels, signed 8-bit, sent row by row (64 bytes).
+- **Output:** 6x6 positions x 2 filters = 72 signed results, 20 bits each
   (no padding, stride 1).
 
 Inside:
@@ -15,14 +15,17 @@ Inside:
 - **Line buffer.** The chip keeps only the newest 19 pixels (two rows plus
   three). When a pixel arrives that completes a 3x3 window (row and column
   both at least 2), the window is at fixed places in the buffer and the
-  chip computes that output position for all 4 filters.
-- **Rotating weights.** Each filter's 9 weights sit in a 72-bit loop that
-  rotates one bit per clock, in exactly the order the MACs use them.
-- **Bit-serial MACs.** Four multiply-accumulate units, one per filter,
-  share the pixel. Each multiplies by adding the pixel shifted by one weight
-  bit per clock (8 clocks per tap, the sign bit subtracts), so there are 4
-  adders instead of 4 multipliers. One output position takes 81 clocks.
-- **No output memory.** The 4 sums wait in the accumulators until the host
+  chip computes that output position for both filters.
+- **Free-running weight loops.** Each filter's 9 weights sit in a 72-bit
+  loop that shifts every clock. A 0..71 phase counter says which weight bit
+  is at the head; a new weight byte is slipped into the loop when its slots
+  go past.
+- **Bit-serial MACs.** Two multiply-accumulate units, one per filter, share
+  the pixel. Each multiplies by adding the pixel shifted by one weight bit
+  per clock (8 clocks per tap, the sign bit subtracts), so there are 2
+  adders instead of 2 multipliers. A position waits for phase 0, then takes
+  72 clocks (at most 144 clocks, 3.6 µs at 40 MHz).
+- **No output memory.** The 2 sums wait in the accumulators until the host
   reads them, then the chip accepts the next pixel.
 
 All control inputs pass through 2-flop synchronisers, so the host can be a
@@ -48,19 +51,19 @@ Hold every strobe high and low for at least 2 clocks each, and keep DATA
 steady while WR is high.
 
 1. Reset the chip (`rst_n` low, then high) with all inputs at 0.
-2. **Weights:** set SEL = 1, then write the 36 weight bytes in the order
-   `tap0 f0, tap0 f1, tap0 f2, tap0 f3, tap1 f0, ...`. For each byte: put it
-   on DATA, pulse WR, wait until BUSY = 0.
+2. **Weights:** set SEL = 1, then write the 18 weight bytes in the order
+   `tap0 f0, tap0 f1, tap1 f0, tap1 f1, ...`. For each byte: put it on
+   DATA, pulse WR, wait until BUSY = 0 (up to 80 clocks).
 3. **Image:** set SEL = 0, then write the 64 pixels row by row the same way.
-   After each pixel, while BUSY = 1: if RVALID = 1, read 12 result bytes
-   (read RESULT, pulse RD, 12 times).
-4. Results arrive in order output row, output column, then filter 0..3,
+   After each pixel, while BUSY = 1: if RVALID = 1, read 6 result bytes
+   (read RESULT, pulse RD, 6 times).
+4. Results arrive in order output row, output column, then filter 0, 1,
    each as 3 bytes, low byte first. The 20-bit value is sign-extended to 24
    bits. The first result appears after pixel 18, the last after pixel 63.
 5. After the last result DONE goes high.
 
 For another image with the same weights, pulse START and go to step 3.
-After a reset, load the weights again. Extra bytes (more than 36 weights or
+After a reset, load the weights again. Extra bytes (more than 18 weights or
 64 pixels) and writes while BUSY are ignored.
 
 In Python-like pseudocode:
@@ -70,11 +73,11 @@ def write(b):
     DATA = b; pulse(WR)
     while BUSY:
         if RVALID:
-            for i in range(12):
+            for i in range(6):
                 results.append(RESULT); pulse(RD)
 
-SEL = 1; [write(w) for w in weights]
-SEL = 0; [write(p) for p in pixels]
+SEL = 1; [write(w) for w in weights]   # 18 bytes
+SEL = 0; [write(p) for p in pixels]    # 64 bytes -> 72 results
 ```
 
 The cocotb testbench in `test/` checks every result against a Python model

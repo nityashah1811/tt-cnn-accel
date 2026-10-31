@@ -3,24 +3,24 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Tiny Tapeout wrapper for the CNNAccelTeam9 streaming 3x3 convolution
- * accelerator (8x8 INT8 image, 4 filters, 6x6x4 INT20 output).
+ * accelerator (8x8 INT8 image, 2 filters, 6x6x2 INT20 output).
  *
  * Pins
  *   ui_in[7:0]   DATA   byte to write (weight or pixel, INT8)
  *   uio_in[0]    WR     rising edge: write DATA
- *   uio_in[1]    SEL    1 = weights (36 bytes), 0 = image pixels (64 bytes)
+ *   uio_in[1]    SEL    1 = weights (18 bytes), 0 = image pixels (64 bytes)
  *                       any change of SEL restarts the byte count
  *   uio_in[2]    START  rising edge: start a new image (restart the pixel
  *                       count, clear DONE). Weights are kept.
  *   uio_in[3]    RD     rising edge: current result byte read, show the next
  *   uio_out[5]   BUSY   wait: the chip is not ready for the next write
- *   uio_out[6]   DONE   the last of the 144 results has been read
+ *   uio_out[6]   DONE   the last of the 72 results has been read
  *   uio_out[7]   RVALID uo_out holds a valid result byte
  *   uo_out[7:0]  RESULT current result byte (0 when RVALID is low)
  *
- * Host loop: write the 36 weights (SEL=1), then the 64 pixels (SEL=0).
+ * Host loop: write the 18 weights (SEL=1), then the 64 pixels (SEL=0).
  * After every write wait until BUSY is low; whenever RVALID is high, read
- * 12 result bytes (pulse RD after each) first.
+ * 6 result bytes (pulse RD after each) first.
  *
  * All strobes go through 2-flop synchronisers, so the host can be a slow
  * microcontroller on its own clock. Hold DATA steady while WR is high.
