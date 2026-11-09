@@ -10,6 +10,10 @@ A 3x3 convolution accelerator for [Tiny Tapeout](https://tinytapeout.com)
 Built in the Basics of ASICs course at the
 [MIT Beaver Works Summer Institute](https://bwsi.mit.edu/bwsi-programs-2/basics-of-asics/).
 
+<img src="docs/mitre_logo.svg" alt="MITRE Lab" width="300">
+
+**MITRE - Proud Sponsor of MIT BWSI bASICs of ASICs**
+
 ![Layout](gds/layout.png)
 
 | | |
