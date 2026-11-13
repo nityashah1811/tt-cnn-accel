@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 412" width="1000" height="412" role="img" aria-label="Setup slack at 40 MHz, all 9 signoff corners">
+<title>Setup slack at 40 MHz, all 9 signoff corners</title>
+<defs><marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8b949e"/></marker><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3987e5"/></marker><marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#d95926"/></marker><marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#199e70"/></marker><marker id="av" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#9085e9"/></marker></defs>
+<rect width="1000" height="412" rx="12" fill="#0d1117"/>
+<text x="30" y="36" font-size="16" fill="#e6edf3" text-anchor="start" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Setup slack at 40 MHz, all 9 signoff corners</text>
+<text x="30" y="57" font-size="12.5" fill="#8b949e" text-anchor="start" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Worst setup slack per corner against the 25 ns clock period. Anything above 0 passes.</text>
+<line x1="280.0" y1="78" x2="280.0" y2="354" stroke="#30363d" stroke-width="1"/>
+<text x="280.0" y="72" font-size="11" fill="#8b949e" text-anchor="middle" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">0 ns</text>
+<line x1="420.0" y1="78" x2="420.0" y2="354" stroke="#30363d" stroke-width="1"/>
+<text x="420.0" y="72" font-size="11" fill="#8b949e" text-anchor="middle" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">5 ns</text>
+<line x1="560.0" y1="78" x2="560.0" y2="354" stroke="#30363d" stroke-width="1"/>
+<text x="560.0" y="72" font-size="11" fill="#8b949e" text-anchor="middle" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">10 ns</text>
+<line x1="700.0" y1="78" x2="700.0" y2="354" stroke="#30363d" stroke-width="1"/>
+<text x="700.0" y="72" font-size="11" fill="#8b949e" text-anchor="middle" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">15 ns</text>
+<line x1="840.0" y1="78" x2="840.0" y2="354" stroke="#30363d" stroke-width="1"/>
+<text x="840.0" y="72" font-size="11" fill="#8b949e" text-anchor="middle" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">20 ns</text>
+<text x="268" y="103.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">typical · 25 °C · 1.80 V (nom RC)</text>
+<path d="M280 90h422.4327607283907a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-422.4327607283907z" fill="#3987e5"/>
+<text x="714.4327607283907" y="103.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">15.23 ns</text>
+<text x="268" y="133.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">typical · 25 °C · 1.80 V (min RC)</text>
+<path d="M280 120h425.43365279261616a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-425.43365279261616z" fill="#3987e5"/>
+<text x="717.4336527926162" y="133.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">15.34 ns</text>
+<text x="268" y="163.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">typical · 25 °C · 1.80 V (max RC)</text>
+<path d="M280 150h419.2452517147673a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-419.2452517147673z" fill="#3987e5"/>
+<text x="711.2452517147673" y="163.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">15.12 ns</text>
+<text x="268" y="193.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">slow · 100 °C · 1.60 V (nom RC)</text>
+<path d="M280 180h310.08169753993445a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-310.08169753993445z" fill="#3987e5"/>
+<text x="602.0816975399345" y="193.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">11.22 ns</text>
+<text x="268" y="223.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">slow · 100 °C · 1.60 V (min RC)</text>
+<path d="M280 210h315.07718259583254a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-315.07718259583254z" fill="#3987e5"/>
+<text x="607.0771825958325" y="223.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">11.40 ns</text>
+<text x="268" y="253.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">slow · 100 °C · 1.60 V (max RC)</text>
+<path d="M280 240h304.55419004287575a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-304.55419004287575z" fill="#3987e5"/>
+<text x="596.5541900428757" y="253.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">11.02 ns</text>
+<text x="268" y="283.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">fast · −40 °C · 1.95 V (nom RC)</text>
+<path d="M280 270h469.2107462042307a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-469.2107462042307z" fill="#3987e5"/>
+<text x="761.2107462042306" y="283.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">16.90 ns</text>
+<text x="268" y="313.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">fast · −40 °C · 1.95 V (min RC)</text>
+<path d="M280 300h471.27288339027484a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-471.27288339027484z" fill="#3987e5"/>
+<text x="763.2728833902748" y="313.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">16.97 ns</text>
+<text x="268" y="343.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">fast · −40 °C · 1.95 V (max RC)</text>
+<path d="M280 330h466.9941228122083a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-466.9941228122083z" fill="#3987e5"/>
+<text x="758.9941228122083" y="343.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">16.82 ns</text>
+<text x="30" y="392" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Worst case: 11.02 ns of slack (slow corner, max RC). Hold slack is positive in every corner too (minimum 0.11 ns).</text>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 294" width="1000" height="294" role="img" aria-label="Where the silicon goes">
+<title>Where the silicon goes</title>
+<defs><marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8b949e"/></marker><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3987e5"/></marker><marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#d95926"/></marker><marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#199e70"/></marker><marker id="av" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#9085e9"/></marker></defs>
+<rect width="1000" height="294" rx="12" fill="#0d1117"/>
+<text x="30" y="36" font-size="16" fill="#e6edf3" text-anchor="start" font-weight="600" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Where the silicon goes</text>
+<text x="30" y="57" font-size="12.5" fill="#8b949e" text-anchor="start" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Placed cell area by class inside the 2x2-tile core (72,565 µm²). Design cells use 51.9% of it.</text>
+<line x1="280.0" y1="78" x2="280.0" y2="264" stroke="#30363d" stroke-width="1"/>
+<text x="280.0" y="72" font-size="11" fill="#8b949e" text-anchor="middle" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">0 µm²</text>
+<line x1="380.0" y1="78" x2="380.0" y2="264" stroke="#30363d" stroke-width="1"/>
+<text x="380.0" y="72" font-size="11" fill="#8b949e" text-anchor="middle" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">10,000 µm²</text>
+<line x1="480.0" y1="78" x2="480.0" y2="264" stroke="#30363d" stroke-width="1"/>
+<text x="480.0" y="72" font-size="11" fill="#8b949e" text-anchor="middle" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">20,000 µm²</text>
+<line x1="580.0" y1="78" x2="580.0" y2="264" stroke="#30363d" stroke-width="1"/>
+<text x="580.0" y="72" font-size="11" fill="#8b949e" text-anchor="middle" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">30,000 µm²</text>
+<line x1="680.0" y1="78" x2="680.0" y2="264" stroke="#30363d" stroke-width="1"/>
+<text x="680.0" y="72" font-size="11" fill="#8b949e" text-anchor="middle" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">40,000 µm²</text>
+<text x="268" y="103.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Fill / decap cells</text>
+<path d="M280 90h345.27199999999993a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-345.27199999999993z" fill="#3987e5"/>
+<text x="637.2719999999999" y="103.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">34,927 µm² · 48.1% · 10,162 cells</text>
+<text x="268" y="133.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Combinational logic</text>
+<path d="M280 120h134.0324a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-134.0324z" fill="#3987e5"/>
+<text x="426.0324" y="133.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">13,803 µm² · 19.0% · 1,416 cells</text>
+<text x="268" y="163.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Flip-flops</text>
+<path d="M280 150h120.432a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-120.432z" fill="#3987e5"/>
+<text x="412.432" y="163.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">12,443 µm² · 17.1% · 585 cells</text>
+<text x="268" y="193.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Timing-repair buffers</text>
+<path d="M280 180h83.6215a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-83.6215z" fill="#3987e5"/>
+<text x="375.62149999999997" y="193.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">8,762 µm² · 12.1% · 893 cells</text>
+<text x="268" y="223.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Clock tree</text>
+<path d="M280 210h9.23765a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-9.23765z" fill="#3987e5"/>
+<text x="301.23765" y="223.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">1,324 µm² · 1.8% · 94 cells</text>
+<text x="268" y="253.5" font-size="12.5" fill="#e6edf3" text-anchor="end" font-weight="400" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">Well taps + antenna diodes</text>
+<path d="M280 240h9.049972a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-9.049972z" fill="#3987e5"/>
+<text x="301.049972" y="253.5" font-size="12" fill="#8b949e" text-anchor="start" font-weight="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">1,305 µm² · 1.8% · 1,040 cells</text>
+</svg>
